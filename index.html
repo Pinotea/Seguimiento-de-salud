@@ -11,7 +11,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
     <script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.3/dist/date-fns.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/idb@7/build/iife/index-min.js"></script>
     <link rel="manifest" href="manifest.json">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -275,97 +274,10 @@
     <audio id="alertSound" src="alert.mp3"></audio>
 
     <script>
-        // Configuración de IndexedDB
-        const dbPromise = idb.openDB('SaludDB', 1, {
-            upgrade(db) {
-                db.createObjectStore('datosPersonales');
-                db.createObjectStore('mediciones', { keyPath: 'id', autoIncrement: true });
-                db.createObjectStore('alertas', { keyPath: 'id', autoIncrement: true });
-            },
-        });
-
-        // Funciones de almacenamiento
-        async function guardarDatosPersonales(datos) {
-            try {
-                const db = await dbPromise;
-                await db.put('datosPersonales', datos, 'datos');
-                console.log('Datos personales guardados con éxito:', datos);
-                return true;
-            } catch (error) {
-                console.error('Error al guardar datos personales:', error);
-                return false;
-            }
-        }
-
-        async function obtenerDatosPersonales() {
-            try {
-                const db = await dbPromise;
-                return await db.get('datosPersonales', 'datos');
-            } catch (error) {
-                console.error('Error al obtener datos personales:', error);
-                return null;
-            }
-        }
-
-        async function guardarMedicion(medicion) {
-            try {
-                const db = await dbPromise;
-                return await db.add('mediciones', medicion);
-            } catch (error) {
-                console.error('Error al guardar medición:', error);
-                throw error;
-            }
-        }
-
-        async function obtenerMediciones() {
-            try {
-                const db = await dbPromise;
-                return await db.getAll('mediciones');
-            } catch (error) {
-                console.error('Error al obtener mediciones:', error);
-                return [];
-            }
-        }
-
-        async function eliminarMedicion(id) {
-            try {
-                const db = await dbPromise;
-                await db.delete('mediciones', id);
-            } catch (error) {
-                console.error('Error al eliminar medición:', error);
-                throw error;
-            }
-        }
-
-        async function guardarAlerta(alerta) {
-            try {
-                const db = await dbPromise;
-                return await db.add('alertas', alerta);
-            } catch (error) {
-                console.error('Error al guardar alerta:', error);
-                throw error;
-            }
-        }
-
-        async function obtenerAlertas() {
-            try {
-                const db = await dbPromise;
-                return await db.getAll('alertas');
-            } catch (error) {
-                console.error('Error al obtener alertas:', error);
-                return [];
-            }
-        }
-
-        async function eliminarAlerta(id) {
-            try {
-                const db = await dbPromise;
-                await db.delete('alertas', id);
-            } catch (error) {
-                console.error('Error al eliminar alerta:', error);
-                throw error;
-            }
-        }
+        let mediciones = JSON.parse(localStorage.getItem('mediciones')) || [];
+        let datosPersonales = JSON.parse(localStorage.getItem('datosPersonales')) || {};
+        let alertas = JSON.parse(localStorage.getItem('alertas')) || [];
+        let presionArterialChart, glucosaChart;
 
         // Registro del Service Worker
         if ('serviceWorker' in navigator) {
@@ -395,37 +307,25 @@
             locale: "es"
         });
 
-        async function mostrarVista(vista) {
-            console.log('Cambiando a vista:', vista);
-            try {
-                document.getElementById('inicio').classList.add('hidden');
-                document.getElementById('registro').classList.add('hidden');
-                document.getElementById('historial').classList.add('hidden');
-                document.getElementById('graficos').classList.add('hidden');
-                document.getElementById('analisis').classList.add('hidden');
-                document.getElementById('alertas').classList.add('hidden');
-                document.getElementById(vista).classList.remove('hidden');
+        function mostrarVista(vista) {
+            document.getElementById('inicio').classList.add('hidden');
+            document.getElementById('registro').classList.add('hidden');
+            document.getElementById('historial').classList.add('hidden');
+            document.getElementById('graficos').classList.add('hidden');
+            document.getElementById('analisis').classList.add('hidden');
+            document.getElementById('alertas').classList.add('hidden');
+            document.getElementById(vista).classList.remove('hidden');
 
-                if (vista === 'inicio') {
-                    console.log('Cargando datos personales...');
-                    await cargarDatosPersonales();
-                } else if (vista === 'historial') {
-                    console.log('Cargando historial...');
-                    await cargarHistorial();
-                } else if (vista === 'graficos') {
-                    console.log('Cargando gráficos...');
-                    await cargarGraficos();
-                } else if (vista === 'analisis') {
-                    console.log('Generando análisis IA...');
-                    await generarAnalisisIA();
-                } else if (vista === 'alertas') {
-                    console.log('Cargando alertas...');
-                    await cargarAlertas();
-                }
-                console.log('Vista cambiada con éxito a:', vista);
-            } catch (error) {
-                console.error('Error al cambiar de vista:', error);
-                mostrarNotificacion('Error al cambiar de vista. Por favor, intente de nuevo.');
+            if (vista === 'inicio') {
+                cargarDatosPersonales();
+            } else if (vista === 'historial') {
+                cargarHistorial();
+            } else if (vista === 'graficos') {
+                cargarGraficos();
+            } else if (vista === 'analisis') {
+                generarAnalisisIA();
+            } else if (vista === 'alertas') {
+                cargarAlertas();
             }
         }
 
@@ -446,497 +346,444 @@
             }
         });
 
-        document.getElementById('medicionForm').addEventListener('submit', async function(e) {
+        document.getElementById('medicionForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            try {
-                const fecha = document.getElementById('fechaMedicion').value;
-                const tipo = document.getElementById('tipoMedicion').value;
-                let medicion = {
-                    fecha: fecha,
-                    tipo: tipo
-                };
+            const fecha = document.getElementById('fechaMedicion').value;
+            const tipo = document.getElementById('tipoMedicion').value;
+            let medicion = {
+                id: Date.now(),
+                fecha: fecha,
+                tipo: tipo
+            };
 
-                if (tipo === 'presion') {
-                    medicion.sistolica = parseInt(document.getElementById('sistolica').value);
-                    medicion.diastolica = parseInt(document.getElementById('diastolica').value);
-                } else if (tipo === 'glucosa') {
-                    medicion.nivelGlucosa = parseInt(document.getElementById('nivelGlucosa').value);
-                }
-
-                await guardarMedicion(medicion);
-                mostrarNotificacion('Medición guardada con éxito');
-                this.reset();
-                document.getElementById('camposPresion').classList.add('hidden');
-                document.getElementById('camposGlucosa').classList.add('hidden');
-                await generarAnalisisIA();
-                verificarValoresAnormales(medicion);
-            } catch (error) {
-                console.error('Error al guardar medición:', error);
-                mostrarNotificacion('Error al guardar la medición. Por favor, intente de nuevo.');
+            if (tipo === 'presion') {
+                medicion.sistolica = parseInt(document.getElementById('sistolica').value);
+                medicion.diastolica = parseInt(document.getElementById('diastolica').value);
+            } else if (tipo === 'glucosa') {
+                medicion.nivelGlucosa = parseInt(document.getElementById('nivelGlucosa').value);
             }
+
+            mediciones.push(medicion);
+            localStorage.setItem('mediciones', JSON.stringify(mediciones));
+            mostrarNotificacion('Medición guardada con éxito');
+            this.reset();
+            document.getElementById('camposPresion').classList.add('hidden');
+            document.getElementById('camposGlucosa').classList.add('hidden');
+            generarAnalisisIA();
+            verificarValoresAnormales(medicion);
         });
 
-        document.getElementById('datosPersonalesForm').addEventListener('submit', async function(e) {
+        document.getElementById('datosPersonalesForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            try {
-                console.log('Guardando datos personales...');
-                const datosPersonales = {
-                    nombre: document.getElementById('nombre').value,
-                    apellido: document.getElementById('apellido').value,
-                    edad: parseInt(document.getElementById('edad').value),
-                    peso: parseFloat(document.getElementById('peso').value),
-                    estatura: parseFloat(document.getElementById('estatura').value),
-                    medicamentos: document.getElementById('medicamentos').value
-                };
-                console.log('Datos personales a guardar:', datosPersonales);
-                const guardadoExitoso = await guardarDatosPersonales(datosPersonales);
-                if (guardadoExitoso) {
-                    console.log('Datos personales guardados en IndexedDB');
-                    mostrarNotificacion('Datos personales guardados con éxito');
-                    await cargarDatosPersonales();
-                    await generarAnalisisIA();
-                } else {
-                    mostrarNotificacion('Error al guardar los datos personales. Por favor, intente de nuevo.');
-                }
-            } catch (error) {
-                console.error('Error al guardar datos personales:', error);
-                mostrarNotificacion('Error al guardar los datos personales. Por favor, intente de nuevo.');
-            }
+            datosPersonales = {
+                nombre: document.getElementById('nombre').value,
+                apellido: document.getElementById('apellido').value,
+                edad: parseInt(document.getElementById('edad').value),
+                peso: parseFloat(document.getElementById('peso').value),
+                estatura: parseFloat(document.getElementById('estatura').value),
+                medicamentos: document.getElementById('medicamentos').value
+            };
+            localStorage.setItem('datosPersonales', JSON.stringify(datosPersonales));
+            mostrarNotificacion('Datos personales guardados con éxito');
+            generarAnalisisIA();
         });
 
-        document.getElementById('alertasForm').addEventListener('submit', async function(e) {
+        document.getElementById('alertasForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            try {
-                const alerta = {
-                    tipo: document.getElementById('tipoAlerta').value,
-                    frecuencia: document.getElementById('frecuencia').value,
-                    hora: document.getElementById('hora').value
-                };
-                await guardarAlerta(alerta);
-                mostrarNotificacion('Alerta guardada con éxito');
-                await cargarAlertas();
-            } catch (error) {
-                console.error('Error al guardar alerta:', error);
-                mostrarNotificacion('Error al guardar la alerta. Por favor, intente de nuevo.');
-            }
+            const alerta = {
+                id: Date.now(),
+                tipo: document.getElementById('tipoAlerta').value,
+                frecuencia: document.getElementById('frecuencia').value,
+                hora: document.getElementById('hora').value
+            };
+            alertas.push(alerta);
+            localStorage.setItem('alertas', JSON.stringify(alertas));
+            mostrarNotificacion('Alerta guardada con éxito');
+            cargarAlertas();
         });
 
-        async function cargarDatosPersonales() {
-            try {
-                const datosPersonales = await obtenerDatosPersonales();
-                if (datosPersonales) {
-                    document.getElementById('nombre').value = datosPersonales.nombre || '';
-                    document.getElementById('apellido').value = datosPersonales.apellido || '';
-                    document.getElementById('edad').value = datosPersonales.edad || '';
-                    document.getElementById('peso').value = datosPersonales.peso || '';
-                    document.getElementById('estatura').value = datosPersonales.estatura || '';
-                    document.getElementById('medicamentos').value = datosPersonales.medicamentos || '';
-                }
-            } catch (error) {
-                console.error('Error al cargar datos personales:', error);
-                mostrarNotificacion('Error al cargar los datos personales. Por favor, intente de nuevo.');
+        function cargarDatosPersonales() {
+            if (datosPersonales.nombre) {
+                document.getElementById('nombre').value = datosPersonales.nombre;
+                document.getElementById('apellido').value = datosPersonales.apellido;
+                document.getElementById('edad').value = datosPersonales.edad;
+                document.getElementById('peso').value = datosPersonales.peso;
+                document.getElementById('estatura').value = datosPersonales.estatura;
+                document.getElementById('medicamentos').value = datosPersonales.medicamentos;
             }
         }
 
-        async function cargarHistorial() {
-            try {
-                const listaMediciones = document.getElementById('listaMediciones');
-                listaMediciones.innerHTML = '';
+        function cargarHistorial() {
+            const listaMediciones = document.getElementById('listaMediciones');
+            listaMediciones.innerHTML = '';
 
-                const mediciones = await obtenerMediciones();
+            if (mediciones.length === 0) {
+                listaMediciones.innerHTML = '<p>No hay mediciones registradas.</p>';
+                return;
+            }
 
-                if (mediciones.length === 0) {
-                    listaMediciones.innerHTML = '<p>No hay mediciones registradas.</p>';
-                    return;
-                }
+            mediciones.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
 
-                mediciones.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
-
-                mediciones.forEach(medicion => {
-                    const medicionElement = document.createElement('div');
-                    medicionElement.className = 'bg-white/10 p-4 rounded-md';
-                    let contenido = `
-                        <p><strong>Fecha:</strong> ${new Date(medicion.fecha).toLocaleString('es-ES')}</p>
-                        <p><strong>Tipo:</strong> ${medicion.tipo === 'presion' ? 'Presión Arterial' : 'Nivel de Glucosa'}</p>
-                    `;
-                    if (medicion.tipo === 'presion') {
-                        contenido += `
-                            <p><strong>Presión Sistólica:</strong> ${medicion.sistolica} mmHg</p>
-                            <p><strong>Presión Diastólica:</strong> ${medicion.diastolica} mmHg</p>
-                        `;
-                    } else {
-                        contenido += `
-                            <p><strong>Nivel de Glucosa:</strong> ${medicion.nivelGlucosa} mg/dL</p>
-                        `;
-                    }
+            mediciones.forEach(medicion => {
+                const medicionElement = document.createElement('div');
+                medicionElement.className = 'bg-white/10 p-4 rounded-md';
+                let contenido = `
+                    <p><strong>Fecha:</strong> ${new Date(medicion.fecha).toLocaleString('es-ES')}</p>
+                    <p><strong>Tipo:</strong> ${medicion.tipo === 'presion' ? 'Presión Arterial' : 'Nivel de Glucosa'}</p>
+                `;
+                if (medicion.tipo === 'presion') {
                     contenido += `
-                        <button class="eliminarMedicion mt-2 px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600" data-id="${medicion.id}">
-                            Eliminar
-                        </button>
+                        <p><strong>Presión Sistólica:</strong> ${medicion.sistolica} mmHg</p>
+                        <p><strong>Presión Diastólica:</strong> ${medicion.diastolica} mmHg</p>
                     `;
-                    medicionElement.innerHTML = contenido;
-                    listaMediciones.appendChild(medicionElement);
-                });
+                } else {
+                    contenido += `
+                        <p><strong>Nivel de Glucosa:</strong> ${medicion.nivelGlucosa} mg/dL</p>
+                    `;
+                }
+                contenido += `
+                    <button class="eliminarMedicion mt-2 px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600" data-id="${medicion.id}">
+                        Eliminar
+                    </button>
+                `;
+                medicionElement.innerHTML = contenido;
+                listaMediciones.appendChild(medicionElement);
+            });
 
-                document.querySelectorAll('.eliminarMedicion').forEach(button => {
-                    button.addEventListener('click', async function() {
-                        const id = parseInt(this.getAttribute('data-id'));
-                        if (confirm('¿Está seguro de que desea eliminar esta medición?')) {
-                            try {
-                                await eliminarMedicion(id);
-                                await cargarHistorial();
-                                await generarAnalisisIA();
-                            } catch (error) {
-                                console.error('Error al eliminar medición:', error);
-                                mostrarNotificacion('Error al eliminar la medición. Por favor, intente de nuevo.');
-                            }
-                        }
-                    });
+            document.querySelectorAll('.eliminarMedicion').forEach(button => {
+                button.addEventListener('click', function() {
+                    const id = parseInt(this.getAttribute('data-id'));
+                    if (confirm('¿Está seguro de que desea eliminar esta medición?')) {
+                        eliminarMedicion(id);
+                    }
                 });
-            } catch (error) {
-                console.error('Error al cargar historial:', error);
-                mostrarNotificacion('Error al cargar el historial. Por favor, intente de nuevo.');
-            }
+            });
         }
 
-        async function cargarGraficos() {
-            try {
-                console.log('Cargando gráficos...');
-                const mediciones = await obtenerMediciones();
-                console.log('Mediciones:', mediciones);
+        function eliminarMedicion(id) {
+            mediciones = mediciones.filter(medicion => medicion.id !== id);
+            localStorage.setItem('mediciones', JSON.stringify(mediciones));
+            cargarHistorial();
+            generarAnalisisIA();
+        }
 
-                const presionArterialData = mediciones.filter(m => m.tipo === 'presion');
-                const glucosaData = mediciones.filter(m => m.tipo === 'glucosa');
+        function cargarGraficos() {
+            console.log('Cargando gráficos...');
+            console.log('Mediciones:', mediciones);
 
-                console.log('Datos de presión arterial:', presionArterialData);
-                console.log('Datos de glucosa:', glucosaData);
+            const presionArterialData = mediciones.filter(m => m.tipo === 'presion');
+            const glucosaData = mediciones.filter(m => m.tipo === 'glucosa');
 
-                if (window.presionArterialChart) {
-                    window.presionArterialChart.destroy();
-                }
-                if (window.glucosaChart) {
-                    window.glucosaChart.destroy();
-                }
+            console.log('Datos de presión arterial:', presionArterialData);
+            console.log('Datos de glucosa:', glucosaData);
 
-                const commonOptions = {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: {
-                            type: 'time',
-                            time: {
-                                unit: 'day',
-                                displayFormats: {
-                                    day: 'dd/MM/yyyy'
-                                }
-                            },
-                            title: {
-                                display: true,
-                                text: 'Fecha',
-                                color: 'rgba(255, 255, 255, 0.9)',
-                                font: {
-                                    size: 14,
-                                    weight: 'bold'
-                                }
-                            },
-                            ticks: {
-                                color: 'rgba(255, 255, 255, 0.9)',
-                                font: {
-                                    size: 12
-                                }
-                            },
-                            grid: {
-                                color: 'rgba(255, 255, 255, 0.3)',
-                                lineWidth: 1.5
+            if (presionArterialChart) {
+                presionArterialChart.destroy();
+            }
+            if (glucosaChart) {
+                glucosaChart.destroy();
+            }
+
+            const commonOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        type: 'time',
+                        time: {
+                            unit: 'day',
+                            displayFormats: {
+                                day: 'dd/MM/yyyy'
                             }
                         },
-                        y: {
+                        title: {
                             display: true,
-                            title: {
-                                display: true,
-                                color: 'rgba(255, 255, 255, 0.9)',
-                                font: {
-                                    size: 14,
-                                    weight: 'bold'
-                                }
-                            },
-                            ticks: {
-                                color: 'rgba(255, 255,255, 0.9)',
-                                font: {
-                                    size: 12
-                                }
-                            },
-                            grid: {
-                                color: 'rgba(255, 255, 255, 0.3)',
-                                lineWidth: 1.5
+                            text: 'Fecha',
+                            color: 'rgba(255, 255, 255, 0.9)',
+                            font: {
+                                size: 14,
+                                weight: 'bold'
+                            }
+                        },
+                        ticks: {
+                            color: 'rgba(255, 255, 255, 0.9)',
+                            font: {
+                                size: 12
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.3)',
+                            lineWidth: 1.5
+                        }
+                    },
+                    y: {
+                        display: true,
+                        title: {
+                            display: true,
+                            color: 'rgba(255, 255, 255, 0.9)',
+                            font: {
+                                size: 14,
+                                weight: 'bold'
+                            }
+                        },
+                        ticks: {
+                            color: 'rgba(255, 255, 255, 0.9)',
+                            font: {
+                                size: 12
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.3)',
+                            lineWidth: 1.5
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: 'rgba(255, 255, 255, 0.9)',
+                            font: {
+                                size: 12
                             }
                         }
                     },
-                    plugins: {
-                        legend: {
-                            labels: {
-                                color: 'rgba(255, 255, 255, 0.9)',
-                                font: {
-                                    size: 12
-                                }
-                            }
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                        titleColor: 'rgba(255, 255, 255, 1)',
+                        bodyColor: 'rgba(255, 255, 255, 1)',
+                        titleFont: {
+                            size: 14,
+                            weight: 'bold'
                         },
-                        tooltip: {
-                            backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                            titleColor: 'rgba(255, 255, 255, 1)',
-                            bodyColor: 'rgba(255, 255, 255, 1)',
-                            titleFont: {
-                                size: 14,
-                                weight: 'bold'
-                            },
-                            bodyFont: {
-                                size: 12
-                            },
-                            padding: 10,
-                            cornerRadius: 4,
-                            callbacks: {
-                                title: function(tooltipItems) {
-                                    return new Date(tooltipItems[0].parsed.x).toLocaleString('es-ES');
-                                }
+                        bodyFont: {
+                            size: 12
+                        },
+                        padding: 10,
+                        cornerRadius: 4,
+                        callbacks: {
+                            title: function(tooltipItems) {
+                                return new Date(tooltipItems[0].parsed.x).toLocaleString('es-ES');
                             }
                         }
                     }
-                };
-
-                if (presionArterialData.length > 0) {
-                    const ctx1 = document.getElementById('presionArterialChart').getContext('2d');
-                    window.presionArterialChart = new Chart(ctx1, {
-                        type: 'line',
-                        data: {
-                            datasets: [
-                                {
-                                    label: 'Presión Sistólica',
-                                    data: presionArterialData.map(d => ({ x: new Date(d.fecha), y: d.sistolica })),
-                                    borderColor: 'rgb(255, 99, 132)',
-                                    backgroundColor: 'rgba(255, 99, 132, 0.5)',
-                                    borderWidth: 4,
-                                    pointRadius: 6,
-                                    pointHoverRadius: 8,
-                                    fill: false
-                                },
-                                {
-                                    label: 'Presión Diastólica',
-                                    data: presionArterialData.map(d => ({ x: new Date(d.fecha), y: d.diastolica })),
-                                    borderColor: 'rgb(54, 162, 235)',
-                                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
-                                    borderWidth: 4,
-                                    pointRadius: 6,
-                                    pointHoverRadius: 8,
-                                    fill: false
-                                }
-                            ]
-                        },
-                        options: {
-                            ...commonOptions,
-                            scales: {
-                                ...commonOptions.scales,
-                                y: {
-                                    ...commonOptions.scales.y,
-                                    title: {
-                                        ...commonOptions.scales.y.title,
-                                        text: 'Presión (mmHg)'
-                                    }
-                                }
-                            },
-                            plugins: {
-                                ...commonOptions.plugins,
-                                title: {
-                                    display: true,
-                                    text: 'Presión Arterial a lo largo del tiempo',
-                                    color: 'rgba(255, 255, 255, 0.9)',
-                                    font: {
-                                        size: 18,
-                                        weight: 'bold'
-                                    }
-                                }
-                            }
-                        }
-                    });
-                    document.getElementById('presionArterialChartContainer').style.display = 'block';
-                } else {
-                    document.getElementById('presionArterialChartContainer').style.display = 'none';
                 }
+            };
 
-                if (glucosaData.length > 0) {
-                    const ctx2 = document.getElementById('glucosaChart').getContext('2d');
-                    window.glucosaChart = new Chart(ctx2, {
-                        type: 'line',
-                        data: {
-                            datasets: [{
-                                label: 'Nivel de Glucosa',
-                                data: glucosaData.map(d => ({ x: new Date(d.fecha), y: d.nivelGlucosa })),
-                                borderColor: 'rgb(75, 192, 192)',
-                                backgroundColor: 'rgba(75, 192, 192, 0.5)',
+            if (presionArterialData.length > 0) {
+                const ctx1 = document.getElementById('presionArterialChart').getContext('2d');
+                presionArterialChart = new Chart(ctx1, {
+                    type: 'line',
+                    data: {
+                        datasets: [
+                            {
+                                label: 'Presión Sistólica',
+                                data: presionArterialData.map(d => ({ x: new Date(d.fecha), y: d.sistolica })),
+                                borderColor: 'rgb(255, 99, 132)',
+                                backgroundColor: 'rgba(255, 99, 132, 0.5)',
                                 borderWidth: 4,
                                 pointRadius: 6,
                                 pointHoverRadius: 8,
                                 fill: false
-                            }]
-                        },
-                        options: {
-                            ...commonOptions,
-                            scales: {
-                                ...commonOptions.scales,
-                                y: {
-                                    ...commonOptions.scales.y,
-                                    title: {
-                                        ...commonOptions.scales.y.title,
-                                        text: 'Nivel de Glucosa (mg/dL)'
-                                    }
-                                }
                             },
-                            plugins: {
-                                ...commonOptions.plugins,
+                            {
+                                label: 'Presión Diastólica',
+                                data: presionArterialData.map(d => ({ x: new Date(d.fecha), y: d.diastolica })),
+                                borderColor: 'rgb(54, 162, 235)',
+                                backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                                borderWidth: 4,
+                                pointRadius: 6,
+                                pointHoverRadius: 8,
+                                fill: false
+                            }
+                        ]
+                    },
+                    options: {
+                        ...commonOptions,
+                        scales: {
+                            ...commonOptions.scales,
+                            y: {
+                                ...commonOptions.scales.y,
                                 title: {
-                                    display: true,
-                                    text: 'Nivel de Glucosa a lo largo del tiempo',
-                                    color: 'rgba(255, 255, 255, 0.9)',
-                                    font: {
-                                        size: 18,
-                                        weight: 'bold'
-                                    }
+                                    ...commonOptions.scales.y.title,
+                                    text: 'Presión (mmHg)'
+                                }
+                            }
+                        },
+                        plugins: {
+                            ...commonOptions.plugins,
+                            title: {
+                                display: true,
+                                text: 'Presión Arterial a lo largo del tiempo',
+                                color: 'rgba(255, 255, 255, 0.9)',
+                                font: {
+                                    size: 18,
+                                    weight: 'bold'
                                 }
                             }
                         }
-                    });
-                    document.getElementById('glucosaChartContainer').style.display = 'block';
-                } else {
-                    document.getElementById('glucosaChartContainer').style.display = 'none';
-                }
-
-                console.log('Gráficos cargados');
-            } catch (error) {
-                console.error('Error al cargar gráficos:', error);
-                mostrarNotificacion('Error al cargar los gráficos. Por favor, intente de nuevo.');
-            }
-        }
-
-        async function generarAnalisisIA() {
-            try {
-                const resultado = document.getElementById('analisisResultado');
-                resultado.innerHTML = '<p class="text-center">Analizando datos...</p>';
-
-                // Simulamos un tiempo de procesamiento
-                setTimeout(async () => {
-                    let analisis = '<h3 class="text-xl font-semibold mb-2">Resultados del Análisis:</h3>';
-
-                    const mediciones = await obtenerMediciones();
-                    const datosPersonales = await obtenerDatosPersonales();
-
-                    // Análisis de presión arterial
-                    const presionArterialData = mediciones.filter(m => m.tipo === 'presion');
-                    if (presionArterialData.length > 0) {
-                        const ultimaMedicion = presionArterialData[presionArterialData.length - 1];
-                        analisis += '<h4 class="text-lg font-medium mt-4">Presión Arterial:</h4>';
-                        if (ultimaMedicion.sistolica < 120 && ultimaMedicion.diastolica < 80) {
-                            analisis += '<p>Su presión arterial está dentro del rango normal. ¡Siga así!</p>';
-                        } else if (ultimaMedicion.sistolica >= 120 && ultimaMedicion.sistolica < 130 && ultimaMedicion.diastolica < 80) {
-                            analisis += '<p>Su presión arterial está elevada. Considere hacer cambios en su estilo de vida.</p>';
-                        } else {
-                            analisis += '<p>Su presión arterial está alta. Se recomienda consultar con un médico.</p>';
-                        }
                     }
-
-                    // Análisis de glucosa
-                    const glucosaData = mediciones.filter(m => m.tipo === 'glucosa');
-                    if (glucosaData.length > 0) {
-                        const ultimaMedicion = glucosaData[glucosaData.length - 1];
-                        analisis += '<h4 class="text-lg font-medium mt-4">Nivel de Glucosa:</h4>';
-                        if (ultimaMedicion.nivelGlucosa < 100) {
-                            analisis += '<p>Su nivel de glucosa está dentro del rango normal. ¡Excelente!</p>';
-                        } else if (ultimaMedicion.nivelGlucosa >= 100 && ultimaMedicion.nivelGlucosa < 126) {
-                            analisis += '<p>Su nivel de glucosa está en el rango de prediabetes. Se recomienda hacer cambios en su dieta y aumentar la actividad física.</p>';
-                        } else {
-                            analisis += '<p>Su nivel de glucosa está elevado. Es importante consultar con un médico para un diagnóstico adecuado.</p>';
-                        }
-                    }
-
-                    // Análisis de IMC
-                    if (datosPersonales && datosPersonales.peso && datosPersonales.estatura) {
-                        const imc = datosPersonales.peso / (datosPersonales.estatura * datosPersonales.estatura);
-                        analisis += '<h4 class="text-lg font-medium mt-4">Índice de Masa Corporal (IMC):</h4>';
-                        analisis += `<p>Su IMC es: ${imc.toFixed(2)}</p>`;
-                        if (imc < 18.5) {
-                            analisis += '<p>Usted está bajo peso. Considere consultar con un nutricionista para mejorar su dieta.</p>';
-                        } else if (imc >= 18.5 && imc < 25) {
-                            analisis += '<p>Su peso está dentro del rango normal. ¡Mantenga sus hábitos saludables!</p>';
-                        } else if (imc >= 25 && imc < 30) {
-                            analisis += '<p>Usted tiene sobrepeso. Considere hacer cambios en su dieta y aumentar su actividad física.</p>';
-                        } else {
-                            analisis += '<p>Usted tiene obesidad. Se recomienda consultar con un médico para desarrollar un plan de pérdida de peso.</p>';
-                        }
-                    }
-
-                    // Recomendaciones generales
-                    analisis += '<h4 class="text-lg font-medium mt-4">Recomendaciones Generales:</h4>';
-                    analisis += '<ul class="list-disc pl-5">';
-                    analisis += '<li>Mantenga una dieta equilibrada y rica en frutas y verduras.</li>';
-                    analisis += '<li>Realice actividad física regularmente, al menos 30 minutos al día.</li>';
-                    analisis += '<li>Reduzca el consumo de sal y azúcares añadidos.</li>';
-                    analisis += '<li>Mantenga un peso saludable.</li>';
-                    analisis += '<li>Evite el consumo excesivo de alcohol y no fume.</li>';
-                    analisis += '<li>Gestione el estrés mediante técnicas de relajación.</li>';
-                    analisis += '</ul>';
-
-                    analisis += '<p class="mt-4 text-sm italic">Recuerde que este análisis es una simulación y no sustituye el consejo de un profesional médico. Siempre consulte con su médico para obtener un diagnóstico y tratamiento adecuados.</p>';
-
-                    resultado.innerHTML = analisis;
-                }, 1000); // Simulamos 1 segundo de "procesamiento"
-            } catch (error) {
-                console.error('Error al generar análisis IA:', error);
-                mostrarNotificacion('Error al generar el análisis. Por favor, intente de nuevo.');
-            }
-        }
-
-        async function cargarAlertas() {
-            try {
-                const listaAlertas = document.getElementById('listaAlertas');
-                listaAlertas.innerHTML = '';
-
-                const alertas = await obtenerAlertas();
-
-                if (alertas.length === 0) {
-                    listaAlertas.innerHTML = '<p>No hay alertas configuradas.</p>';
-                    return;
-                }
-
-                alertas.forEach(alerta => {
-                    const alertaElement = document.createElement('div');
-                    alertaElement.className = 'bg-white/10 p-4 rounded-md';
-                    alertaElement.innerHTML = `
-                        <p><strong>Tipo:</strong> ${alerta.tipo === 'presion' ? 'Presión Arterial' : 'Nivel de Glucosa'}</p>
-                        <p><strong>Frecuencia:</strong> ${alerta.frecuencia}</p>
-                        <p><strong>Hora:</strong> ${alerta.hora}</p>
-                        <button class="eliminarAlerta mt-2 px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600" data-id="${alerta.id}">
-                            Eliminar
-                        </button>
-                    `;
-                    listaAlertas.appendChild(alertaElement);
                 });
+                document.getElementById('presionArterialChartContainer').style.display = 'block';
+            } else {
+                document.getElementById('presionArterialChartContainer').style.display = 'none';
+            }
 
-                document.querySelectorAll('.eliminarAlerta').forEach(button => {
-                    button.addEventListener('click', async function() {
-                        const id = parseInt(this.getAttribute('data-id'));
-                        if (confirm('¿Está seguro de que desea eliminar esta alerta?')) {
-                            try {
-                                await eliminarAlerta(id);
-                                await cargarAlertas();
-                            } catch (error) {
-                                console.error('Error al eliminar alerta:', error);
-                                mostrarNotificacion('Error al eliminar la alerta. Por favor, intente de nuevo.');
+            if (glucosaData.length > 0) {
+                const ctx2 = document.getElementById('glucosaChart').getContext('2d');
+                glucosaChart = new Chart(ctx2, {
+                    type: 'line',
+                    data: {
+                        datasets: [{
+                            label: 'Nivel de Glucosa',
+                            data: glucosaData.map(d => ({ x: new Date(d.fecha), y: d.nivelGlucosa })),
+                            borderColor: 'rgb(75, 192, 192)',
+                            backgroundColor: 'rgba(75, 192, 192, 0.5)',
+                            borderWidth: 4,
+                            pointRadius: 6,
+                            pointHoverRadius: 8,
+                            fill: false
+                        }]
+                    },
+                    options: {
+                        ...commonOptions,
+                        scales: {
+                            ...commonOptions.scales,
+                            y: {
+                                ...commonOptions.scales.y,
+                                title: {
+                                    ...commonOptions.scales.y.title,
+                                    text: 'Nivel de Glucosa (mg/dL)'
+                                }
+                            }
+                        },
+                        plugins: {
+                            ...commonOptions.plugins,
+                            title: {
+                                display: true,
+                                text: 'Nivel de Glucosa a lo largo del tiempo',
+                                color: 'rgba(255, 255, 255, 0.9)',
+                                font: {
+                                    size: 18,
+                                    weight: 'bold'
+                                }
                             }
                         }
-                    });
+                    }
                 });
-            } catch (error) {
-                console.error('Error al cargar alertas:', error);
-                mostrarNotificacion('Error al cargar las alertas. Por favor, intente de nuevo.');
+                document.getElementById('glucosaChartContainer').style.display = 'block';
+            } else {
+                document.getElementById('glucosaChartContainer').style.display = 'none';
             }
+
+            console.log('Gráficos cargados');
+        }
+
+        function generarAnalisisIA() {
+            const resultado = document.getElementById('analisisResultado');
+            resultado.innerHTML = '<p class="text-center">Analizando datos...</p>';
+
+            // Simulamos un tiempo de procesamiento
+            setTimeout(() => {
+                let analisis = '<h3 class="text-xl font-semibold mb-2">Resultados del Análisis:</h3>';
+
+                // Análisis de presión arterial
+                const presionArterialData = mediciones.filter(m => m.tipo === 'presion');
+                if (presionArterialData.length > 0) {
+                    const ultimaMedicion = presionArterialData[presionArterialData.length - 1];
+                    analisis += '<h4 class="text-lg font-medium mt-4">Presión Arterial:</h4>';
+                    if (ultimaMedicion.sistolica < 120 && ultimaMedicion.diastolica < 80) {
+                        analisis += '<p>Su presión arterial está dentro del rango normal. ¡Siga así!</p>';
+                    } else if (ultimaMedicion.sistolica >= 120 && ultimaMedicion.sistolica < 130 && ultimaMedicion.diastolica < 80) {
+                        analisis += '<p>Su presión arterial está elevada. Considere hacer cambios en su estilo de vida.</p>';
+                    } else {
+                        analisis += '<p>Su presión arterial está alta. Se recomienda consultar con un médico.</p>';
+                    }
+                }
+
+                // Análisis de glucosa
+                const glucosaData = mediciones.filter(m => m.tipo === 'glucosa');
+                if (glucosaData.length > 0) {
+                    const ultimaMedicion = glucosaData[glucosaData.length - 1];
+                    analisis += '<h4 class="text-lg font-medium mt-4">Nivel de Glucosa:</h4>';
+                    if (ultimaMedicion.nivelGlucosa < 100) {
+                        analisis += '<p>Su nivel de glucosa está dentro del rango normal. ¡Excelente!</p>';
+                    } else if (ultimaMedicion.nivelGlucosa >= 100 && ultimaMedicion.nivelGlucosa < 126) {
+                        analisis += '<p>Su nivel de glucosa está en el rango de prediabetes. Se recomienda hacer cambios en su dieta y aumentar la actividad física.</p>';
+                    } else {
+                        analisis += '<p>Su nivel de glucosa está elevado. Es importante consultar con un médico para un diagnóstico adecuado.</p>';
+                    }
+                }
+
+                // Análisis de IMC
+                if (datosPersonales.peso && datosPersonales.estatura) {
+                    const imc = datosPersonales.peso / (datosPersonales.estatura * datosPersonales.estatura);
+                    analisis += '<h4 class="text-lg font-medium mt-4">Índice de Masa Corporal (IMC):</h4>';
+                    analisis += `<p>Su IMC es: ${imc.toFixed(2)}</p>`;
+                    if (imc < 18.5) {
+                        analisis += '<p>Usted está bajo peso. Considere consultar con un nutricionista para mejorar su dieta.</p>';
+                    } else if (imc >= 18.5 && imc < 25) {
+                        analisis += '<p>Su peso está dentro del rango normal. ¡Mantenga sus hábitos saludables!</p>';
+                    } else if (imc >= 25 && imc < 30) {
+                        analisis += '<p>Usted tiene sobrepeso. Considere hacer cambios en su dieta y aumentar su actividad física.</p>';
+                    } else {
+                        analisis += '<p>Usted tiene obesidad. Se recomienda consultar con un médico para desarrollar un plan de pérdida de peso.</p>';
+                    }
+                }
+
+                // Recomendaciones generales
+                analisis += '<h4 class="text-lg font-medium mt-4">Recomendaciones Generales:</h4>';
+                analisis += '<ul class="list-disc pl-5">';
+                analisis += '<li>Mantenga una dieta equilibrada y rica en frutas y verduras.</li>';
+                analisis += '<li>Realice actividad física regularmente, al menos 30 minutos al día.</li>';
+                analisis += '<li>Reduzca el consumo de sal y azúcares añadidos.</li>';
+                analisis += '<li>Mantenga un peso saludable.</li>';
+                analisis += '<li>Evite el consumo excesivo de alcohol y no fume.</li>';
+                analisis += '<li>Gestione el estrés mediante técnicas de relajación.</li>';
+                analisis += '</ul>';
+
+                analisis += '<p class="mt-4 text-sm italic">Recuerde que este análisis es una simulación y no sustituye el consejo de un profesional médico. Siempre consulte con su médico para obtener un diagnóstico y tratamiento adecuados.</p>';
+
+                resultado.innerHTML = analisis;
+            }, 1000); // Simulamos 1 segundo de "procesamiento"
+        }
+
+        function cargarAlertas() {
+            const listaAlertas = document.getElementById('listaAlertas');
+            listaAlertas.innerHTML = '';
+
+            if (alertas.length === 0) {
+                listaAlertas.innerHTML = '<p>No hay alertas configuradas.</p>';
+                return;
+            }
+
+            alertas.forEach(alerta => {
+                const alertaElement = document.createElement('div');
+                alertaElement.className = 'bg-white/10 p-4 rounded-md';
+                alertaElement.innerHTML = `
+                    <p><strong>Tipo:</strong> ${alerta.tipo === 'presion' ? 'Presión Arterial' : 'Nivel de Glucosa'}</p>
+                    <p><strong>Frecuencia:</strong> ${alerta.frecuencia}</p>
+                    <p><strong>Hora:</strong> ${alerta.hora}</p>
+                    <button class="eliminarAlerta mt-2 px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600" data-id="${alerta.id}">
+                        Eliminar
+                    </button>
+                `;
+                listaAlertas.appendChild(alertaElement);
+            });
+
+            document.querySelectorAll('.eliminarAlerta').forEach(button => {
+                button.addEventListener('click', function() {
+                    const id = parseInt(this.getAttribute('data-id'));
+                    if (confirm('¿Está seguro de que desea eliminar esta alerta?')) {
+                        eliminarAlerta(id);
+                    }
+                });
+            });
+        }
+
+        function eliminarAlerta(id) {
+            alertas = alertas.filter(alerta => alerta.id !== id);
+            localStorage.setItem('alertas', JSON.stringify(alertas));
+            cargarAlertas();
         }
 
         function verificarValoresAnormales(medicion) {
@@ -969,23 +816,12 @@
             }, 5000);
         }
 
-        async function inicializarAplicacion() {
-            console.log('Inicializando aplicación...');
-            try {
-                await mostrarVista('inicio');
-                console.log('Aplicación inicializada con éxito');
-            } catch (error) {
-                console.error('Error al inicializar la aplicación:', error);
-                mostrarNotificacion('Error al inicializar la aplicación. Por favor, recargue la página.');
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', inicializarAplicacion);
+        // Inicializar la vista de inicio
+        mostrarVista('inicio');
 
         // Configurar recordatorios
-        setInterval(async () => {
+        setInterval(() => {
             const ahora = new Date();
-            const alertas = await obtenerAlertas();
             alertas.forEach(alerta => {
                 const [hora, minuto] = alerta.hora.split(':');
                 if (ahora.getHours() === parseInt(hora) && ahora.getMinutes() === parseInt(minuto)) {
@@ -996,4 +832,3 @@
     </script>
 </body>
 </html>
-
