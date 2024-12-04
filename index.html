@@ -274,9 +274,9 @@
     <audio id="alertSound" src="alert.mp3"></audio>
 
     <script>
-        let mediciones = JSON.parse(localStorage.getItem('mediciones')) || [];
-        let datosPersonales = JSON.parse(localStorage.getItem('datosPersonales')) || {};
-        let alertas = JSON.parse(localStorage.getItem('alertas')) || [];
+        let mediciones = [];
+        let datosPersonales = {};
+        let alertas = [];
         let presionArterialChart, glucosaChart;
 
         // Registro del Service Worker
@@ -300,6 +300,27 @@
         }
 
         solicitarPermisoNotificaciones();
+
+        // Función para cargar datos desde localStorage
+        function cargarDatosDesdeLocalStorage() {
+            const medicionesGuardadas = localStorage.getItem('mediciones');
+            if (medicionesGuardadas) {
+                mediciones = JSON.parse(medicionesGuardadas);
+            }
+
+            const datosPersonalesGuardados = localStorage.getItem('datosPersonales');
+            if (datosPersonalesGuardados) {
+                datosPersonales = JSON.parse(datosPersonalesGuardados);
+            }
+
+            const alertasGuardadas = localStorage.getItem('alertas');
+            if (alertasGuardadas) {
+                alertas = JSON.parse(alertasGuardadas);
+            }
+        }
+
+        // Cargar datos al iniciar la aplicación
+        cargarDatosDesdeLocalStorage();
 
         flatpickr("#fechaMedicion", {
             enableTime: true,
