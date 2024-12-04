@@ -286,8 +286,15 @@
 
       // Funciones de almacenamiento
       async function guardarDatosPersonales(datos) {
-          const db = await dbPromise;
-          await db.put('datosPersonales', datos, 'datos');
+          try {
+              const db = await dbPromise;
+              await db.put('datosPersonales', datos, 'datos');
+              console.log('Datos personales guardados con éxito:', datos);
+              return true;
+          } catch (error) {
+              console.error('Error al guardar datos personales:', error);
+              return false;
+          }
       }
 
       async function obtenerDatosPersonales() {
@@ -353,31 +360,37 @@
           locale: "es"
       });
 
-      function mostrarVista(vista) {
+      async function mostrarVista(vista) {
           console.log('Cambiando a vista:', vista);
-          document.getElementById('inicio').classList.add('hidden');
-          document.getElementById('registro').classList.add('hidden');
-          document.getElementById('historial').classList.add('hidden');
-          document.getElementById('graficos').classList.add('hidden');
-          document.getElementById('analisis').classList.add('hidden');
-          document.getElementById('alertas').classList.add('hidden');
-          document.getElementById(vista).classList.remove('hidden');
+          try {
+              document.getElementById('inicio').classList.add('hidden');
+              document.getElementById('registro').classList.add('hidden');
+              document.getElementById('historial').classList.add('hidden');
+              document.getElementById('graficos').classList.add('hidden');
+              document.getElementById('analisis').classList.add('hidden');
+              document.getElementById('alertas').classList.add('hidden');
+              document.getElementById(vista).classList.remove('hidden');
 
-          if (vista === 'inicio') {
-              console.log('Cargando datos personales...');
-              cargarDatosPersonales();
-          } else if (vista === 'historial') {
-              console.log('Cargando historial...');
-              cargarHistorial();
-          } else if (vista === 'graficos') {
-              console.log('Cargando gráficos...');
-              cargarGraficos();
-          } else if (vista === 'analisis') {
-              console.log('Generando análisis IA...');
-              generarAnalisisIA();
-          } else if (vista === 'alertas') {
-              console.log('Cargando alertas...');
-              cargarAlertas();
+              if (vista === 'inicio') {
+                  console.log('Cargando datos personales...');
+                  await cargarDatosPersonales();
+              } else if (vista === 'historial') {
+                  console.log('Cargando historial...');
+                  await cargarHistorial();
+              } else if (vista === 'graficos') {
+                  console.log('Cargando gráficos...');
+                  await cargarGraficos();
+              } else if (vista === 'analisis') {
+                  console.log('Generando análisis IA...');
+                  await generarAnalisisIA();
+              } else if (vista === 'alertas') {
+                  console.log('Cargando alertas...');
+                  await cargarAlertas();
+              }
+              console.log('Vista cambiada con éxito a:', vista);
+          } catch (error) {
+              console.error('Error al cambiar de vista:', error);
+              mostrarNotificacion('Error al cambiar de vista. Por favor, intente de nuevo.');
           }
       }
 
@@ -435,10 +448,15 @@
               medicamentos: document.getElementById('medicamentos').value
           };
           console.log('Datos personales a guardar:', datosPersonales);
-          await guardarDatosPersonales(datosPersonales);
-          console.log('Datos personales guardados en IndexedDB');
-          mostrarNotificacion('Datos personales guardados con éxito');
-          generarAnalisisIA();
+          const guardadoExitoso = await guardarDatosPersonales(datosPersonales);
+          if (guardadoExitoso) {
+              console.log('Datos personales guardados en IndexedDB');
+              mostrarNotificacion('Datos personales guardados con éxito');
+              await cargarDatosPersonales(); // Recargar los datos para verificar
+              generarAnalisisIA();
+          } else {
+              mostrarNotificacion('Error al guardar los datos personales. Por favor, intente de nuevo.');
+          }
       });
 
       document.getElementById('alertasForm').addEventListener('submit', async function(e) {
@@ -866,11 +884,18 @@
           }, 5000);
       }
 
-      // Inicializar la vista de inicio
-      document.addEventListener('DOMContentLoaded', function() {
-          console.log('Documento cargado, inicializando aplicación...');
-          mostrarVista('inicio');
-      });
+      async function inicializarAplicacion() {
+          console.log('Inicializando aplicación...');
+          try {
+              await mostrarVista('inicio');
+              console.log('Aplicación inicializada con éxito');
+          } catch (error) {
+              console.error('Error al inicializar la aplicación:', error);
+              mostrarNotificacion('Error al inicializar la aplicación. Por favor, recargue la página.');
+          }
+      }
+
+      document.addEventListener('DOMContentLoaded', inicializarAplicacion);
 
       // Configurar recordatorios
       setInterval(async () => {
