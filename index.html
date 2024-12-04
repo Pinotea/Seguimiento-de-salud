@@ -9,81 +9,20 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
-    <script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.3/dist/date-fns.min.js"></script>
-    <link rel="manifest" href="manifest.json">
+    <script src="https://cdn.jsdelivr.net/npm/idb@7/build/iife/index-min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        
         body {
             font-family: 'Inter', sans-serif;
-        }
-        
-        .bg-gradient {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
-        
         .card {
             background-color: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
         }
-        
-        .input {
-            background-color: rgba(255, 255, 255, 0.2);
-        }
-        
-        .button {
-            transition: background-color 0.3s ease;
-        }
-        
-        .button:hover {
-            background-color: rgba(59, 130, 246, 0.8);
-        }
-
         input[type="text"], input[type="number"], select, textarea {
             color: #333;
             background-color: rgba(255, 255, 255, 0.8);
         }
-        input::placeholder, textarea::placeholder {
-            color: #666;
-        }
-        .flatpickr-calendar {
-            background-color: rgba(255, 255, 255, 0.9);
-        }
-        .flatpickr-day {
-            color: #333 !important;
-        }
-        #fechaMedicion {
-            color: #000000;
-        }
-        
-        .logo-image {
-            max-width: 200px;
-            width: 100%;
-            height: auto;
-            margin: 0 auto 1rem;
-            display: block;
-            object-fit: contain;
-            filter: drop-shadow(0 0 10px rgba(255, 0, 0, 0.3));
-        }
-
-        @media (max-width: 640px) {
-            .container {
-                padding-left: 1rem;
-                padding-right: 1rem;
-            }
-            .card {
-                padding: 1rem;
-            }
-            .logo-image {
-                max-width: 150px;
-            }
-        }
-
-        #presionArterialChartContainer, #glucosaChartContainer {
-            height: 400px;
-        }
-
         .notification {
             position: fixed;
             top: 20px;
@@ -97,68 +36,32 @@
         }
     </style>
 </head>
-<body class="min-h-screen bg-gradient text-white py-8">
+<body class="min-h-screen text-white py-8">
     <div class="container mx-auto px-4">
         <header class="mb-8 text-center">
-            <h1 class="text-3xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
-                SEGUIMIENTO DE SALUD
-            </h1>
-            <img src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/LOGO%20%20PNG-MdYlerJu9ypZJS0gKZsnY0ifQfuQTq.png" 
-                 alt="Monitor Cardíaco" 
-                 class="logo-image"
-                 loading="eager">
+            <h1 class="text-3xl font-bold mb-4">SEGUIMIENTO DE SALUD</h1>
         </header>
 
         <nav class="mb-8 flex flex-wrap justify-center gap-2">
-            <button id="irInicio" class="px-3 py-2 text-xs border border-transparent font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                Inicio
-            </button>
-            <button id="irRegistro" class="px-3 py-2 text-xs border border-transparent font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                Registrar Medición
-            </button>
-            <button id="irHistorial" class="px-3 py-2 text-xs border border-transparent font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                Ver Historial
-            </button>
-            <button id="irGraficos" class="px-3 py-2 text-xs border border-transparent font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                Ver Gráficos
-            </button>
-            <button id="irAnalisis" class="px-3 py-2 text-xs border border-transparent font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                Análisis IA
-            </button>
-            <button id="irAlertas" class="px-3 py-2 text-xs border border-transparent font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                Alertas y Recordatorios
-            </button>
+            <button id="irInicio" class="px-3 py-2 text-xs border border-transparent font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">Inicio</button>
+            <button id="irRegistro" class="px-3 py-2 text-xs border border-transparent font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">Registrar Medición</button>
+            <button id="irHistorial" class="px-3 py-2 text-xs border border-transparent font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">Ver Historial</button>
+            <button id="irGraficos" class="px-3 py-2 text-xs border border-transparent font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">Ver Gráficos</button>
         </nav>
 
         <div id="inicio" class="w-full max-w-md mx-auto">
             <div class="card rounded-lg shadow-lg p-6">
-                <h2 class="text-2xl font-semibold mb-4 text-center text-white">Datos Personales</h2>
+                <h2 class="text-2xl font-semibold mb-4 text-center">Datos Personales</h2>
                 <form id="datosPersonalesForm" class="space-y-4">
                     <div>
-                        <label for="nombre" class="block text-sm font-medium text-gray-200">Nombre</label>
-                        <input type="text" id="nombre" required class="mt-1 block w-full px-3 py-2 border border-transparent rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <label for="nombre" class="block text-sm font-medium">Nombre</label>
+                        <input type="text" id="nombre" required class="mt-1 block w-full px-3 py-2 border border-transparent rounded-md">
                     </div>
                     <div>
-                        <label for="apellido" class="block text-sm font-medium text-gray-200">Apellido</label>
-                        <input type="text" id="apellido" required class="mt-1 block w-full px-3 py-2 border border-transparent rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <label for="edad" class="block text-sm font-medium">Edad</label>
+                        <input type="number" id="edad" required min="0" max="120" class="mt-1 block w-full px-3 py-2 border border-transparent rounded-md">
                     </div>
-                    <div>
-                        <label for="edad" class="block text-sm font-medium text-gray-200">Edad</label>
-                        <input type="number" id="edad" required min="0" max="120" class="mt-1 block w-full px-3 py-2 border border-transparent rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    </div>
-                    <div>
-                        <label for="peso" class="block text-sm font-medium text-gray-200">Peso (kg)</label>
-                        <input type="number" id="peso" required min="0" max="500" step="0.1" class="mt-1 block w-full px-3 py-2 border border-transparent rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    </div>
-                    <div>
-                        <label for="estatura" class="block text-sm font-medium text-gray-200">Estatura (metros)</label>
-                        <input type="number" id="estatura" required min="0" max="3" step="0.01" class="mt-1 block w-full px-3 py-2 border border-transparent rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    </div>
-                    <div>
-                        <label for="medicamentos" class="block text-sm font-medium text-gray-200">Medicamentos</label>
-                        <textarea id="medicamentos" rows="3" class="mt-1 block w-full px-3 py-2 border border-transparent rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
-                    </div>
-                    <button type="submit" class="w-full px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <button type="submit" class="w-full px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
                         Guardar Datos Personales
                     </button>
                 </form>
@@ -167,15 +70,15 @@
 
         <div id="registro" class="w-full max-w-md mx-auto hidden">
             <div class="card rounded-lg shadow-lg p-6">
-                <h2 class="text-2xl font-semibold mb-4 text-center text-white">Registrar Medición</h2>
+                <h2 class="text-2xl font-semibold mb-4 text-center">Registrar Medición</h2>
                 <form id="medicionForm" class="space-y-4">
                     <div>
-                        <label for="fechaMedicion" class="block text-sm font-medium text-gray-200">Fecha y Hora</label>
-                        <input type="text" id="fechaMedicion" required class="mt-1 block w-full px-3 py-2 border border-transparent rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <label for="fechaMedicion" class="block text-sm font-medium">Fecha y Hora</label>
+                        <input type="text" id="fechaMedicion" required class="mt-1 block w-full px-3 py-2 border border-transparent rounded-md">
                     </div>
                     <div>
-                        <label for="tipoMedicion" class="block text-sm font-medium text-gray-200">Tipo de Medición</label>
-                        <select id="tipoMedicion" required class="mt-1 block w-full px-3 py-2 border border-transparent rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <label for="tipoMedicion" class="block text-sm font-medium">Tipo de Medición</label>
+                        <select id="tipoMedicion" required class="mt-1 block w-full px-3 py-2 border border-transparent rounded-md">
                             <option value="">Seleccione el tipo</option>
                             <option value="presion">Presión Arterial</option>
                             <option value="glucosa">Nivel de Glucosa</option>
@@ -183,21 +86,21 @@
                     </div>
                     <div id="camposPresion" class="hidden">
                         <div>
-                            <label for="sistolica" class="block text-sm font-medium text-gray-200">Presión Sistólica (mmHg)</label>
-                            <input type="number" id="sistolica" min="0" max="300" class="mt-1 block w-full px-3 py-2 border border-transparent rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <label for="sistolica" class="block text-sm font-medium">Presión Sistólica (mmHg)</label>
+                            <input type="number" id="sistolica" min="0" max="300" class="mt-1 block w-full px-3 py-2 border border-transparent rounded-md">
                         </div>
                         <div>
-                            <label for="diastolica" class="block text-sm font-medium text-gray-200">Presión Diastólica (mmHg)</label>
-                            <input type="number" id="diastolica" min="0" max="200" class="mt-1 block w-full px-3 py-2 border border-transparent rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <label for="diastolica" class="block text-sm font-medium">Presión Diastólica (mmHg)</label>
+                            <input type="number" id="diastolica" min="0" max="200" class="mt-1 block w-full px-3 py-2 border border-transparent rounded-md">
                         </div>
                     </div>
                     <div id="camposGlucosa" class="hidden">
                         <div>
-                            <label for="nivelGlucosa" class="block text-sm font-medium text-gray-200">Nivel de Glucosa (mg/dL)</label>
-                            <input type="number" id="nivelGlucosa" min="0" max="600" class="mt-1 block w-full px-3 py-2 border border-transparent rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <label for="nivelGlucosa" class="block text-sm font-medium">Nivel de Glucosa (mg/dL)</label>
+                            <input type="number" id="nivelGlucosa" min="0" max="600" class="mt-1 block w-full px-3 py-2 border border-transparent rounded-md">
                         </div>
                     </div>
-                    <button type="submit" class="w-full px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <button type="submit" class="w-full px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
                         Guardar Medición
                     </button>
                 </form>
@@ -206,7 +109,7 @@
 
         <div id="historial" class="w-full max-w-4xl mx-auto hidden">
             <div class="card rounded-lg shadow-lg p-6">
-                <h2 class="text-2xl font-semibold mb-4 text-center text-white">Historial de Mediciones</h2>
+                <h2 class="text-2xl font-semibold mb-4 text-center">Historial de Mediciones</h2>
                 <div id="listaMediciones" class="space-y-4">
                     <!-- Las mediciones se insertarán aquí -->
                 </div>
@@ -215,7 +118,7 @@
 
         <div id="graficos" class="w-full max-w-4xl mx-auto hidden">
             <div class="card rounded-lg shadow-lg p-6">
-                <h2 class="text-2xl font-semibold mb-4 text-center text-white">Gráficos de Mediciones</h2>
+                <h2 class="text-2xl font-semibold mb-4 text-center">Gráficos de Mediciones</h2>
                 <div id="presionArterialChartContainer" class="mb-4">
                     <canvas id="presionArterialChart"></canvas>
                 </div>
@@ -224,251 +127,74 @@
                 </div>
             </div>
         </div>
-
-        <div id="analisis" class="w-full max-w-4xl mx-auto hidden">
-            <div class="card rounded-lg shadow-lg p-6">
-                <h2 class="text-2xl font-semibold mb-4 text-center text-white">Análisis de IA</h2>
-                <div id="analisisResultado" class="space-y-4">
-                    <!-- El análisis se insertará aquí -->
-                </div>
-            </div>
-        </div>
-
-        <div id="alertas" class="w-full max-w-md mx-auto hidden">
-            <div class="card rounded-lg shadow-lg p-6">
-                <h2 class="text-2xl font-semibold mb-4 text-center text-white">Alertas y Recordatorios</h2>
-                <form id="alertasForm" class="space-y-4">
-                    <div>
-                        <label for="tipoAlerta" class="block text-sm font-medium text-gray-200">Tipo de Alerta</label>
-                        <select id="tipoAlerta" required class="mt-1 block w-full px-3 py-2 border border-transparent rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                            <option value="">Seleccione el tipo</option>
-                            <option value="presion">Presión Arterial</option>
-                            <option value="glucosa">Nivel de Glucosa</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="frecuencia" class="block text-sm font-medium text-gray-200">Frecuencia de Recordatorio</label>
-                        <select id="frecuencia" required class="mt-1 block w-full px-3 py-2 border border-transparent rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                            <option value="diario">Diario</option>
-                            <option value="semanal">Semanal</option>
-                            <option value="mensual">Mensual</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="hora" class="block text-sm font-medium text-gray-200">Hora del Recordatorio</label>
-                        <input type="time" id="hora" required class="mt-1 block w-full px-3 py-2 border border-transparent rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    </div>
-                    <button type="submit" class="w-full px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                        Guardar Alerta
-                    </button>
-                </form>
-                <div id="listaAlertas" class="mt-6 space-y-4">
-                    <!-- Las alertas se insertarán aquí -->
-                </div>
-            </div>
-        </div>
     </div>
 
     <div id="notification" class="notification" role="alert"></div>
 
-    <audio id="alertSound" src="alert.mp3"></audio>
-
     <script>
-        let mediciones = JSON.parse(localStorage.getItem('mediciones')) || [];
-        let datosPersonales = JSON.parse(localStorage.getItem('datosPersonales')) || {};
-        let alertas = JSON.parse(localStorage.getItem('alertas')) || [];
-        let presionArterialChart, glucosaChart;
-
-        function verificarLocalStorage() {
-            var test = 'test';
-            try {
-                localStorage.setItem(test, test);
-                localStorage.removeItem(test);
-                return true;
-            } catch(e) {
-                return false;
-            }
-        }
-
-        if (!verificarLocalStorage()) {
-            console.error('localStorage no está soportado en este dispositivo');
-            alert('Su dispositivo no soporta almacenamiento local. Algunas funciones pueden no estar disponibles.');
-        }
-
-
-        // Registro del Service Worker
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', function() {
-                navigator.serviceWorker.register('/service-worker.js').then(function(registration) {
-                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
-                }, function(err) {
-                    console.log('ServiceWorker registration failed: ', err);
-                });
-            });
-        }
-
-        // Solicitar permiso para notificaciones
-        function solicitarPermisoNotificaciones() {
-            Notification.requestPermission().then(function(result) {
-                if (result === 'granted') {
-                    console.log('Permiso de notificaciones concedido');
-                }
-            });
-        }
-
-        solicitarPermisoNotificaciones();
-
-        flatpickr("#fechaMedicion", {
-            enableTime: true,
-            dateFormat: "Y-m-d H:i",
-            locale: "es"
+        // Configuración de IndexedDB
+        const dbPromise = idb.openDB('SaludDB', 1, {
+            upgrade(db) {
+                db.createObjectStore('datosPersonales');
+                db.createObjectStore('mediciones', { keyPath: 'id', autoIncrement: true });
+            },
         });
 
+        // Funciones de almacenamiento
+        async function guardarDatosPersonales(datos) {
+            const db = await dbPromise;
+            await db.put('datosPersonales', datos, 'datos');
+        }
+
+        async function obtenerDatosPersonales() {
+            const db = await dbPromise;
+            return db.get('datosPersonales', 'datos');
+        }
+
+        async function guardarMedicion(medicion) {
+            const db = await dbPromise;
+            return db.add('mediciones', medicion);
+        }
+
+        async function obtenerMediciones() {
+            const db = await dbPromise;
+            return db.getAll('mediciones');
+        }
+
+        async function eliminarMedicion(id) {
+            const db = await dbPromise;
+            await db.delete('mediciones', id);
+        }
+
+        // Funciones de la interfaz de usuario
         function mostrarVista(vista) {
-            console.log('Cambiando a vista:', vista);
             document.getElementById('inicio').classList.add('hidden');
             document.getElementById('registro').classList.add('hidden');
             document.getElementById('historial').classList.add('hidden');
             document.getElementById('graficos').classList.add('hidden');
-            document.getElementById('analisis').classList.add('hidden');
-            document.getElementById('alertas').classList.add('hidden');
             document.getElementById(vista).classList.remove('hidden');
 
             if (vista === 'inicio') {
-                console.log('Cargando datos personales...');
                 cargarDatosPersonales();
             } else if (vista === 'historial') {
-                console.log('Cargando historial...');
                 cargarHistorial();
             } else if (vista === 'graficos') {
-                console.log('Cargando gráficos...');
                 cargarGraficos();
-            } else if (vista === 'analisis') {
-                console.log('Generando análisis IA...');
-                generarAnalisisIA();
-            } else if (vista === 'alertas') {
-                console.log('Cargando alertas...');
-                cargarAlertas();
             }
         }
 
-        document.getElementById('irInicio').addEventListener('click', () => mostrarVista('inicio'));
-        document.getElementById('irRegistro').addEventListener('click', () => mostrarVista('registro'));
-        document.getElementById('irHistorial').addEventListener('click', () => mostrarVista('historial'));
-        document.getElementById('irGraficos').addEventListener('click', () => mostrarVista('graficos'));
-        document.getElementById('irAnalisis').addEventListener('click', () => mostrarVista('analisis'));
-        document.getElementById('irAlertas').addEventListener('click', () => mostrarVista('alertas'));
-
-        document.getElementById('tipoMedicion').addEventListener('change', function() {
-            document.getElementById('camposPresion').classList.add('hidden');
-            document.getElementById('camposGlucosa').classList.add('hidden');
-            if (this.value === 'presion') {
-                document.getElementById('camposPresion').classList.remove('hidden');
-            } else if (this.value === 'glucosa') {
-                document.getElementById('camposGlucosa').classList.remove('hidden');
-            }
-        });
-
-        document.getElementById('medicionForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const fecha = document.getElementById('fechaMedicion').value;
-            const tipo = document.getElementById('tipoMedicion').value;
-            let medicion = {
-                id: Date.now(),
-                fecha: fecha,
-                tipo: tipo
-            };
-
-            if (tipo === 'presion') {
-                medicion.sistolica = parseInt(document.getElementById('sistolica').value);
-                medicion.diastolica = parseInt(document.getElementById('diastolica').value);
-            } else if (tipo === 'glucosa') {
-                medicion.nivelGlucosa = parseInt(document.getElementById('nivelGlucosa').value);
-            }
-
-            mediciones.push(medicion);
-            localStorage.setItem('mediciones', JSON.stringify(mediciones));
-            mostrarNotificacion('Medición guardada con éxito');
-            this.reset();
-            document.getElementById('camposPresion').classList.add('hidden');
-            document.getElementById('camposGlucosa').classList.add('hidden');
-            generarAnalisisIA();
-            verificarValoresAnormales(medicion);
-        });
-
-        document.getElementById('datosPersonalesForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            console.log('Guardando datos personales...');
-            datosPersonales = {
-                nombre: document.getElementById('nombre').value,
-                apellido: document.getElementById('apellido').value,
-                edad: parseInt(document.getElementById('edad').value),
-                peso: parseFloat(document.getElementById('peso').value),
-                estatura: parseFloat(document.getElementById('estatura').value),
-                medicamentos: document.getElementById('medicamentos').value
-            };
-            console.log('Datos personales a guardar:', datosPersonales);
-            localStorage.setItem('datosPersonales', JSON.stringify(datosPersonales));
-            console.log('Datos personales guardados en localStorage');
-            mostrarNotificacion('Datos personales guardados con éxito');
-            generarAnalisisIA();
-        });
-
-        document.getElementById('alertasForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const alerta = {
-                id: Date.now(),
-                tipo: document.getElementById('tipoAlerta').value,
-                frecuencia: document.getElementById('frecuencia').value,
-                hora: document.getElementById('hora').value
-            };
-            alertas.push(alerta);
-            localStorage.setItem('alertas', JSON.stringify(alertas));
-            mostrarNotificacion('Alerta guardada con éxito');
-            cargarAlertas();
-        });
-
-        function cargarDatosPersonales() {
-            if (datosPersonales.nombre) {
-                document.getElementById('nombre').value = datosPersonales.nombre;
-                document.getElementById('apellido').value = datosPersonales.apellido;
-                document.getElementById('edad').value = datosPersonales.edad;
-                document.getElementById('peso').value = datosPersonales.peso;
-                document.getElementById('estatura').value = datosPersonales.estatura;
-                document.getElementById('medicamentos').value = datosPersonales.medicamentos;
+        async function cargarDatosPersonales() {
+            const datos = await obtenerDatosPersonales();
+            if (datos) {
+                document.getElementById('nombre').value = datos.nombre || '';
+                document.getElementById('edad').value = datos.edad || '';
             }
         }
 
-        function cargarDatosDesdeLocalStorage() {
-            console.log('Cargando datos desde localStorage...');
-            const medicionesGuardadas = localStorage.getItem('mediciones');
-            if (medicionesGuardadas) {
-                mediciones = JSON.parse(medicionesGuardadas);
-                console.log('Mediciones cargadas:', mediciones);
-            } else {
-                console.log('No se encontraron mediciones guardadas');
-            }
-
-            const datosPersonalesGuardados = localStorage.getItem('datosPersonales');
-            if (datosPersonalesGuardados) {
-                datosPersonales = JSON.parse(datosPersonalesGuardados);
-                console.log('Datos personales cargados:', datosPersonales);
-            } else {
-                console.log('No se encontraron datos personales guardados');
-            }
-
-            const alertasGuardadas = localStorage.getItem('alertas');
-            if (alertasGuardadas) {
-                alertas = JSON.parse(alertasGuardadas);
-                console.log('Alertas cargadas:', alertas);
-            } else {
-                console.log('No se encontraron alertas guardadas');
-            }
-        }
-
-        function cargarHistorial() {
+        async function cargarHistorial() {
             const listaMediciones = document.getElementById('listaMediciones');
             listaMediciones.innerHTML = '';
+            const mediciones = await obtenerMediciones();
 
             if (mediciones.length === 0) {
                 listaMediciones.innerHTML = '<p>No hay mediciones registradas.</p>';
@@ -504,37 +230,26 @@
             });
 
             document.querySelectorAll('.eliminarMedicion').forEach(button => {
-                button.addEventListener('click', function() {
+                button.addEventListener('click', async function() {
                     const id = parseInt(this.getAttribute('data-id'));
                     if (confirm('¿Está seguro de que desea eliminar esta medición?')) {
-                        eliminarMedicion(id);
+                        await eliminarMedicion(id);
+                        cargarHistorial();
                     }
                 });
             });
         }
 
-        function eliminarMedicion(id) {
-            mediciones = mediciones.filter(medicion => medicion.id !== id);
-            localStorage.setItem('mediciones', JSON.stringify(mediciones));
-            cargarHistorial();
-            generarAnalisisIA();
-        }
-
-        function cargarGraficos() {
-            console.log('Cargando gráficos...');
-            console.log('Mediciones:', mediciones);
-
+        async function cargarGraficos() {
+            const mediciones = await obtenerMediciones();
             const presionArterialData = mediciones.filter(m => m.tipo === 'presion');
             const glucosaData = mediciones.filter(m => m.tipo === 'glucosa');
 
-            console.log('Datos de presión arterial:', presionArterialData);
-            console.log('Datos de glucosa:', glucosaData);
-
-            if (presionArterialChart) {
-                presionArterialChart.destroy();
+            if (window.presionArterialChart) {
+                window.presionArterialChart.destroy();
             }
-            if (glucosaChart) {
-                glucosaChart.destroy();
+            if (window.glucosaChart) {
+                window.glucosaChart.destroy();
             }
 
             const commonOptions = {
@@ -551,80 +266,18 @@
                         },
                         title: {
                             display: true,
-                            text: 'Fecha',
-                            color: 'rgba(255, 255, 255, 0.9)',
-                            font: {
-                                size: 14,
-                                weight: 'bold'
-                            }
-                        },
-                        ticks: {
-                            color: 'rgba(255, 255, 255, 0.9)',
-                            font: {
-                                size: 12
-                            }
-                        },
-                        grid: {
-                            color: 'rgba(255, 255, 255, 0.3)',
-                            lineWidth: 1.5
+                            text: 'Fecha'
                         }
                     },
                     y: {
-                        display: true,
-                        title: {
-                            display: true,
-                            color: 'rgba(255, 255, 255, 0.9)',
-                            font: {
-                                size: 14,
-                                weight: 'bold'
-                            }
-                        },
-                        ticks: {
-                            color: 'rgba(255, 255, 255, 0.9)',
-                            font: {
-                                size: 12
-                            }
-                        },
-                        grid: {
-                            color: 'rgba(255, 255, 255, 0.3)',
-                            lineWidth: 1.5
-                        }
-                    }
-                },
-                plugins: {
-                    legend: {
-                        labels: {
-                            color: 'rgba(255, 255, 255, 0.9)',
-                            font: {
-                                size: 12
-                            }
-                        }
-                    },
-                    tooltip: {
-                        backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                        titleColor: 'rgba(255, 255, 255, 1)',
-                        bodyColor: 'rgba(255, 255, 255, 1)',
-                        titleFont: {
-                            size: 14,
-                            weight: 'bold'
-                        },
-                        bodyFont: {
-                            size: 12
-                        },
-                        padding: 10,
-                        cornerRadius: 4,
-                        callbacks: {
-                            title: function(tooltipItems) {
-                                return new Date(tooltipItems[0].parsed.x).toLocaleString('es-ES');
-                            }
-                        }
+                        beginAtZero: true
                     }
                 }
             };
 
             if (presionArterialData.length > 0) {
                 const ctx1 = document.getElementById('presionArterialChart').getContext('2d');
-                presionArterialChart = new Chart(ctx1, {
+                window.presionArterialChart = new Chart(ctx1, {
                     type: 'line',
                     data: {
                         datasets: [
@@ -633,20 +286,12 @@
                                 data: presionArterialData.map(d => ({ x: new Date(d.fecha), y: d.sistolica })),
                                 borderColor: 'rgb(255, 99, 132)',
                                 backgroundColor: 'rgba(255, 99, 132, 0.5)',
-                                borderWidth: 4,
-                                pointRadius: 6,
-                                pointHoverRadius: 8,
-                                fill: false
                             },
                             {
                                 label: 'Presión Diastólica',
                                 data: presionArterialData.map(d => ({ x: new Date(d.fecha), y: d.diastolica })),
                                 borderColor: 'rgb(54, 162, 235)',
                                 backgroundColor: 'rgba(54, 162, 235, 0.5)',
-                                borderWidth: 4,
-                                pointRadius: 6,
-                                pointHoverRadius: 8,
-                                fill: false
                             }
                         ]
                     },
@@ -657,20 +302,8 @@
                             y: {
                                 ...commonOptions.scales.y,
                                 title: {
-                                    ...commonOptions.scales.y.title,
+                                    display: true,
                                     text: 'Presión (mmHg)'
-                                }
-                            }
-                        },
-                        plugins: {
-                            ...commonOptions.plugins,
-                            title: {<continuation_point>
-                                display: true,
-                                text: 'Presión Arterial a lo largo del tiempo',
-                                color: 'rgba(255, 255, 255, 0.9)',
-                                font: {
-                                    size: 18,
-                                    weight: 'bold'
                                 }
                             }
                         }
@@ -683,7 +316,7 @@
 
             if (glucosaData.length > 0) {
                 const ctx2 = document.getElementById('glucosaChart').getContext('2d');
-                glucosaChart = new Chart(ctx2, {
+                window.glucosaChart = new Chart(ctx2, {
                     type: 'line',
                     data: {
                         datasets: [{
@@ -691,10 +324,6 @@
                             data: glucosaData.map(d => ({ x: new Date(d.fecha), y: d.nivelGlucosa })),
                             borderColor: 'rgb(75, 192, 192)',
                             backgroundColor: 'rgba(75, 192, 192, 0.5)',
-                            borderWidth: 4,
-                            pointRadius: 6,
-                            pointHoverRadius: 8,
-                            fill: false
                         }]
                     },
                     options: {
@@ -704,20 +333,8 @@
                             y: {
                                 ...commonOptions.scales.y,
                                 title: {
-                                    ...commonOptions.scales.y.title,
+                                    display: true,
                                     text: 'Nivel de Glucosa (mg/dL)'
-                                }
-                            }
-                        },
-                        plugins: {
-                            ...commonOptions.plugins,
-                            title: {
-                                display: true,
-                                text: 'Nivel de Glucosa a lo largo del tiempo',
-                                color: 'rgba(255, 255, 255, 0.9)',
-                                font: {
-                                    size: 18,
-                                    weight: 'bold'
                                 }
                             }
                         }
@@ -727,169 +344,71 @@
             } else {
                 document.getElementById('glucosaChartContainer').style.display = 'none';
             }
-
-            console.log('Gráficos cargados');
-        }
-
-        function generarAnalisisIA() {
-            const resultado = document.getElementById('analisisResultado');
-            resultado.innerHTML = '<p class="text-center">Analizando datos...</p>';
-
-            // Simulamos un tiempo de procesamiento
-            setTimeout(() => {
-                let analisis = '<h3 class="text-xl font-semibold mb-2">Resultados del Análisis:</h3>';
-
-                // Análisis de presión arterial
-                const presionArterialData = mediciones.filter(m => m.tipo === 'presion');
-                if (presionArterialData.length > 0) {
-                    const ultimaMedicion = presionArterialData[presionArterialData.length - 1];
-                    analisis += '<h4 class="text-lg font-medium mt-4">Presión Arterial:</h4>';
-                    if (ultimaMedicion.sistolica < 120 && ultimaMedicion.diastolica < 80) {
-                        analisis += '<p>Su presión arterial está dentro del rango normal. ¡Siga así!</p>';
-                    } else if (ultimaMedicion.sistolica >= 120 && ultimaMedicion.sistolica < 130 && ultimaMedicion.diastolica < 80) {
-                        analisis += '<p>Su presión arterial está elevada. Considere hacer cambios en su estilo de vida.</p>';
-                    } else {
-                        analisis += '<p>Su presión arterial está alta. Se recomienda consultar con un médico.</p>';
-                    }
-                }
-
-                // Análisis de glucosa
-                const glucosaData = mediciones.filter(m => m.tipo === 'glucosa');
-                if (glucosaData.length > 0) {
-                    const ultimaMedicion = glucosaData[glucosaData.length - 1];
-                    analisis += '<h4 class="text-lg font-medium mt-4">Nivel de Glucosa:</h4>';
-                    if (ultimaMedicion.nivelGlucosa < 100) {
-                        analisis += '<p>Su nivel de glucosa está dentro del rango normal. ¡Excelente!</p>';
-                    } else if (ultimaMedicion.nivelGlucosa >= 100 && ultimaMedicion.nivelGlucosa < 126) {
-                        analisis += '<p>Su nivel de glucosa está en el rango de prediabetes. Se recomienda hacer cambios en su dieta y aumentar la actividad física.</p>';
-                    } else {
-                        analisis += '<p>Su nivel de glucosa está elevado. Es importante consultar con un médico para un diagnóstico adecuado.</p>';
-                    }
-                }
-
-                // Análisis de IMC
-                if (datosPersonales.peso && datosPersonales.estatura) {
-                    const imc = datosPersonales.peso / (datosPersonales.estatura * datosPersonales.estatura);
-                    analisis += '<h4 class="text-lg font-medium mt-4">Índice de Masa Corporal (IMC):</h4>';
-                    analisis += `<p>Su IMC es: ${imc.toFixed(2)}</p>`;
-                    if (imc < 18.5) {
-                        analisis += '<p>Usted está bajo peso. Considere consultar con un nutricionista para mejorar su dieta.</p>';
-                    } else if (imc >= 18.5 && imc < 25) {
-                        analisis += '<p>Su peso está dentro del rango normal. ¡Mantenga sus hábitos saludables!</p>';
-                    } else if (imc >= 25 && imc < 30) {
-                        analisis += '<p>Usted tiene sobrepeso. Considere hacer cambios en su dieta y aumentar su actividad física.</p>';
-                    } else {
-                        analisis += '<p>Usted tiene obesidad. Se recomienda consultar con un médico para desarrollar un plan de pérdida de peso.</p>';
-                    }
-                }
-
-                // Recomendaciones generales
-                analisis += '<h4 class="text-lg font-medium mt-4">Recomendaciones Generales:</h4>';
-                analisis += '<ul class="list-disc pl-5">';
-                analisis += '<li>Mantenga una dieta equilibrada y rica en frutas y verduras.</li>';
-                analisis += '<li>Realice actividad física regularmente, al menos 30 minutos al día.</li>';
-                analisis += '<li>Reduzca el consumo de sal y azúcares añadidos.</li>';
-                analisis += '<li>Mantenga un peso saludable.</li>';
-                analisis += '<li>Evite el consumo excesivo de alcohol y no fume.</li>';
-                analisis += '<li>Gestione el estrés mediante técnicas de relajación.</li>';
-                analisis += '</ul>';
-
-                analisis += '<p class="mt-4 text-sm italic">Recuerde que este análisis es una simulación y no sustituye el consejo de un profesional médico. Siempre consulte con su médico para obtener un diagnóstico y tratamiento adecuados.</p>';
-
-                resultado.innerHTML = analisis;
-            }, 1000); // Simulamos 1 segundo de "procesamiento"
-        }
-
-        function cargarAlertas() {
-            const listaAlertas = document.getElementById('listaAlertas');
-            listaAlertas.innerHTML = '';
-
-            if (alertas.length === 0) {
-                listaAlertas.innerHTML = '<p>No hay alertas configuradas.</p>';
-                return;
-            }
-
-            alertas.forEach(alerta => {
-                const alertaElement = document.createElement('div');
-                alertaElement.className = 'bg-white/10 p-4 rounded-md';
-                alertaElement.innerHTML = `
-                    <p><strong>Tipo:</strong> ${alerta.tipo === 'presion' ? 'Presión Arterial' : 'Nivel de Glucosa'}</p>
-                    <p><strong>Frecuencia:</strong> ${alerta.frecuencia}</p>
-                    <p><strong>Hora:</strong> ${alerta.hora}</p>
-                    <button class="eliminarAlerta mt-2 px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600" data-id="${alerta.id}">
-                        Eliminar
-                    </button>
-                `;
-                listaAlertas.appendChild(alertaElement);
-            });
-
-            document.querySelectorAll('.eliminarAlerta').forEach(button => {
-                button.addEventListener('click', function() {
-                    const id = parseInt(this.getAttribute('data-id'));
-                    if (confirm('¿Está seguro de que desea eliminar esta alerta?')) {
-                        eliminarAlerta(id);
-                    }
-                });
-            });
-        }
-
-        function eliminarAlerta(id) {
-            alertas = alertas.filter(alerta => alerta.id !== id);
-            localStorage.setItem('alertas', JSON.stringify(alertas));
-            cargarAlertas();
-        }
-
-        function verificarValoresAnormales(medicion) {
-            if (medicion.tipo === 'presion') {
-                if (medicion.sistolica > 140 || medicion.diastolica > 90) {
-                    mostrarNotificacion('¡Alerta! Su presión arterial está alta. Considere consultar a un médico.');
-                }
-            } else if (medicion.tipo === 'glucosa') {
-                if (medicion.nivelGlucosa > 200) {
-                    mostrarNotificacion('¡Alerta! Su nivel de glucosa está elevado. Considere consultar a un médico.');
-                }
-            }
         }
 
         function mostrarNotificacion(mensaje) {
             const notification = document.getElementById('notification');
             notification.textContent = mensaje;
             notification.style.display = 'block';
-            
-            // Reproducir sonido de alerta
-            document.getElementById('alertSound').play();
-
-            // Mostrar notificación push
-            if (Notification.permission === "granted") {
-                new Notification("Alerta de Salud", { body: mensaje });
-            }
-
             setTimeout(() => {
                 notification.style.display = 'none';
-            }, 5000);
+            }, 3000);
         }
 
-        // Inicializar la vista de inicio
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('Documento cargado, inicializando aplicación...');
-            if (verificarLocalStorage()) {
-                cargarDatosDesdeLocalStorage();
-                mostrarVista('inicio');
-            } else {
-                console.error('No se pudo inicializar la aplicación debido a la falta de soporte de localStorage');
+        // Event Listeners
+        document.getElementById('irInicio').addEventListener('click', () => mostrarVista('inicio'));
+        document.getElementById('irRegistro').addEventListener('click', () => mostrarVista('registro'));
+        document.getElementById('irHistorial').addEventListener('click', () => mostrarVista('historial'));
+        document.getElementById('irGraficos').addEventListener('click', () => mostrarVista('graficos'));
+
+        document.getElementById('tipoMedicion').addEventListener('change', function() {
+            document.getElementById('camposPresion').classList.add('hidden');
+            document.getElementById('camposGlucosa').classList.add('hidden');
+            if (this.value === 'presion') {
+                document.getElementById('camposPresion').classList.remove('hidden');
+            } else if (this.value === 'glucosa') {
+                document.getElementById('camposGlucosa').classList.remove('hidden');
             }
         });
 
-        // Configurar recordatorios
-        setInterval(() => {
-            const ahora = new Date();
-            alertas.forEach(alerta => {
-                const [hora, minuto] = alerta.hora.split(':');
-                if (ahora.getHours() === parseInt(hora) && ahora.getMinutes() === parseInt(minuto)) {
-                    mostrarNotificacion(`Recordatorio: Es hora de medir su ${alerta.tipo === 'presion' ? 'presión arterial' : 'nivel de glucosa'}.`);
-                }
-            });
-        }, 60000); // Verificar cada minuto
+        document.getElementById('datosPersonalesForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const datos = {
+                nombre: document.getElementById('nombre').value,
+                edad: parseInt(document.getElementById('edad').value)
+            };
+            await guardarDatosPersonales(datos);
+            mostrarNotificacion('Datos personales guardados con éxito');
+        });
+
+        document.getElementById('medicionForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const fecha = document.getElementById('fechaMedicion').value;
+            const tipo = document.getElementById('tipoMedicion').value;
+            let medicion = { fecha, tipo };
+
+            if (tipo === 'presion') {
+                medicion.sistolica = parseInt(document.getElementById('sistolica').value);
+                medicion.diastolica = parseInt(document.getElementById('diastolica').value);
+            } else if (tipo === 'glucosa') {
+                medicion.nivelGlucosa = parseInt(document.getElementById('nivelGlucosa').value);
+            }
+
+            await guardarMedicion(medicion);
+            mostrarNotificacion('Medición guardada con éxito');
+            this.reset();
+            document.getElementById('camposPresion').classList.add('hidden');
+            document.getElementById('camposGlucosa').classList.add('hidden');
+        });
+
+        // Inicialización
+        flatpickr("#fechaMedicion", {
+            enableTime: true,
+            dateFormat: "Y-m-d H:i",
+            locale: "es"
+        });
+
+        mostrarVista('inicio');
     </script>
 </body>
 </html>
