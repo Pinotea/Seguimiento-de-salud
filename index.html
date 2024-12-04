@@ -274,10 +274,27 @@
     <audio id="alertSound" src="alert.mp3"></audio>
 
     <script>
-        let mediciones = [];
-        let datosPersonales = {};
-        let alertas = [];
+        let mediciones = JSON.parse(localStorage.getItem('mediciones')) || [];
+        let datosPersonales = JSON.parse(localStorage.getItem('datosPersonales')) || {};
+        let alertas = JSON.parse(localStorage.getItem('alertas')) || [];
         let presionArterialChart, glucosaChart;
+
+        function verificarLocalStorage() {
+            var test = 'test';
+            try {
+                localStorage.setItem(test, test);
+                localStorage.removeItem(test);
+                return true;
+            } catch(e) {
+                return false;
+            }
+        }
+
+        if (!verificarLocalStorage()) {
+            console.error('localStorage no está soportado en este dispositivo');
+            alert('Su dispositivo no soporta almacenamiento local. Algunas funciones pueden no estar disponibles.');
+        }
+
 
         // Registro del Service Worker
         if ('serviceWorker' in navigator) {
@@ -301,27 +318,6 @@
 
         solicitarPermisoNotificaciones();
 
-        // Función para cargar datos desde localStorage
-        function cargarDatosDesdeLocalStorage() {
-            const medicionesGuardadas = localStorage.getItem('mediciones');
-            if (medicionesGuardadas) {
-                mediciones = JSON.parse(medicionesGuardadas);
-            }
-
-            const datosPersonalesGuardados = localStorage.getItem('datosPersonales');
-            if (datosPersonalesGuardados) {
-                datosPersonales = JSON.parse(datosPersonalesGuardados);
-            }
-
-            const alertasGuardadas = localStorage.getItem('alertas');
-            if (alertasGuardadas) {
-                alertas = JSON.parse(alertasGuardadas);
-            }
-        }
-
-        // Cargar datos al iniciar la aplicación
-        cargarDatosDesdeLocalStorage();
-
         flatpickr("#fechaMedicion", {
             enableTime: true,
             dateFormat: "Y-m-d H:i",
@@ -329,6 +325,7 @@
         });
 
         function mostrarVista(vista) {
+            console.log('Cambiando a vista:', vista);
             document.getElementById('inicio').classList.add('hidden');
             document.getElementById('registro').classList.add('hidden');
             document.getElementById('historial').classList.add('hidden');
@@ -338,14 +335,19 @@
             document.getElementById(vista).classList.remove('hidden');
 
             if (vista === 'inicio') {
+                console.log('Cargando datos personales...');
                 cargarDatosPersonales();
             } else if (vista === 'historial') {
+                console.log('Cargando historial...');
                 cargarHistorial();
             } else if (vista === 'graficos') {
+                console.log('Cargando gráficos...');
                 cargarGraficos();
             } else if (vista === 'analisis') {
+                console.log('Generando análisis IA...');
                 generarAnalisisIA();
             } else if (vista === 'alertas') {
+                console.log('Cargando alertas...');
                 cargarAlertas();
             }
         }
@@ -396,6 +398,7 @@
 
         document.getElementById('datosPersonalesForm').addEventListener('submit', function(e) {
             e.preventDefault();
+            console.log('Guardando datos personales...');
             datosPersonales = {
                 nombre: document.getElementById('nombre').value,
                 apellido: document.getElementById('apellido').value,
@@ -404,7 +407,9 @@
                 estatura: parseFloat(document.getElementById('estatura').value),
                 medicamentos: document.getElementById('medicamentos').value
             };
+            console.log('Datos personales a guardar:', datosPersonales);
             localStorage.setItem('datosPersonales', JSON.stringify(datosPersonales));
+            console.log('Datos personales guardados en localStorage');
             mostrarNotificacion('Datos personales guardados con éxito');
             generarAnalisisIA();
         });
@@ -431,6 +436,33 @@
                 document.getElementById('peso').value = datosPersonales.peso;
                 document.getElementById('estatura').value = datosPersonales.estatura;
                 document.getElementById('medicamentos').value = datosPersonales.medicamentos;
+            }
+        }
+
+        function cargarDatosDesdeLocalStorage() {
+            console.log('Cargando datos desde localStorage...');
+            const medicionesGuardadas = localStorage.getItem('mediciones');
+            if (medicionesGuardadas) {
+                mediciones = JSON.parse(medicionesGuardadas);
+                console.log('Mediciones cargadas:', mediciones);
+            } else {
+                console.log('No se encontraron mediciones guardadas');
+            }
+
+            const datosPersonalesGuardados = localStorage.getItem('datosPersonales');
+            if (datosPersonalesGuardados) {
+                datosPersonales = JSON.parse(datosPersonalesGuardados);
+                console.log('Datos personales cargados:', datosPersonales);
+            } else {
+                console.log('No se encontraron datos personales guardados');
+            }
+
+            const alertasGuardadas = localStorage.getItem('alertas');
+            if (alertasGuardadas) {
+                alertas = JSON.parse(alertasGuardadas);
+                console.log('Alertas cargadas:', alertas);
+            } else {
+                console.log('No se encontraron alertas guardadas');
             }
         }
 
@@ -632,7 +664,7 @@
                         },
                         plugins: {
                             ...commonOptions.plugins,
-                            title: {
+                            title: {<continuation_point>
                                 display: true,
                                 text: 'Presión Arterial a lo largo del tiempo',
                                 color: 'rgba(255, 255, 255, 0.9)',
@@ -838,7 +870,15 @@
         }
 
         // Inicializar la vista de inicio
-        mostrarVista('inicio');
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Documento cargado, inicializando aplicación...');
+            if (verificarLocalStorage()) {
+                cargarDatosDesdeLocalStorage();
+                mostrarVista('inicio');
+            } else {
+                console.error('No se pudo inicializar la aplicación debido a la falta de soporte de localStorage');
+            }
+        });
 
         // Configurar recordatorios
         setInterval(() => {
@@ -853,3 +893,4 @@
     </script>
 </body>
 </html>
+
