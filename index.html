@@ -9,9 +9,6 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
-    <script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.3/dist/date-fns.min.js"></script>
-    <link rel="manifest" href="manifest.json">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         
@@ -469,14 +466,8 @@
         }
 
         function cargarGraficos() {
-            console.log('Cargando gráficos...');
-            console.log('Mediciones:', mediciones);
-
             const presionArterialData = mediciones.filter(m => m.tipo === 'presion');
             const glucosaData = mediciones.filter(m => m.tipo === 'glucosa');
-
-            console.log('Datos de presión arterial:', presionArterialData);
-            console.log('Datos de glucosa:', glucosaData);
 
             if (presionArterialChart) {
                 presionArterialChart.destroy();
@@ -587,7 +578,7 @@
                                 fill: false
                             },
                             {
-                                label: 'Presión Diastólica',
+                label: 'Presión Diastólica',
                                 data: presionArterialData.map(d => ({ x: new Date(d.fecha), y: d.diastolica })),
                                 borderColor: 'rgb(54, 162, 235)',
                                 backgroundColor: 'rgba(54, 162, 235, 0.5)',
@@ -675,8 +666,6 @@
             } else {
                 document.getElementById('glucosaChartContainer').style.display = 'none';
             }
-
-            console.log('Gráficos cargados');
         }
 
         function generarAnalisisIA() {
