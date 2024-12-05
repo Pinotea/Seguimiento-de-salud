@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -14,32 +15,25 @@
     <link rel="manifest" href="manifest.json">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        
         body {
             font-family: 'Inter', sans-serif;
         }
-        
         .bg-gradient {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
-        
         .card {
             background-color: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
         }
-        
         .input {
             background-color: rgba(255, 255, 255, 0.2);
         }
-        
         .button {
             transition: background-color 0.3s ease;
         }
-        
         .button:hover {
             background-color: rgba(59, 130, 246, 0.8);
         }
-
         input[type="text"], input[type="number"], select, textarea {
             color: #333;
             background-color: rgba(255, 255, 255, 0.8);
@@ -56,7 +50,6 @@
         #fechaMedicion {
             color: #000000;
         }
-        
         .logo-image {
             max-width: 200px;
             width: 100%;
@@ -66,7 +59,6 @@
             object-fit: contain;
             filter: drop-shadow(0 0 10px rgba(255, 0, 0, 0.3));
         }
-
         @media (max-width: 640px) {
             .container {
                 padding-left: 1rem;
@@ -79,11 +71,9 @@
                 max-width: 150px;
             }
         }
-
         #presionArterialChartContainer, #glucosaChartContainer {
             height: 400px;
         }
-
         .notification {
             position: fixed;
             top: 20px;
@@ -97,6 +87,7 @@
         }
     </style>
 </head>
+
 <body class="min-h-screen bg-gradient text-white py-8">
     <div class="container mx-auto px-4">
         <header class="mb-8 text-center">
@@ -164,7 +155,6 @@
                 </form>
             </div>
         </div>
-
         <div id="registro" class="w-full max-w-md mx-auto hidden">
             <div class="card rounded-lg shadow-lg p-6">
                 <h2 class="text-2xl font-semibold mb-4 text-center text-white">Registrar Medición</h2>
@@ -268,7 +258,6 @@
             </div>
         </div>
     </div>
-
     <div id="notification" class="notification" role="alert"></div>
 
     <audio id="alertSound" src="alert.mp3"></audio>
@@ -802,7 +791,7 @@
             const notification = document.getElementById('notification');
             notification.textContent = mensaje;
             notification.style.display = 'block';
-            
+
             // Reproducir sonido de alerta
             document.getElementById('alertSound').play();
 
